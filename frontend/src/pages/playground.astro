@@ -1,0 +1,449 @@
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+
+<Layout title="Playground" description="Test ML models interactively">
+  <Navbar />
+
+  <main class="playground-layout">
+    <!-- Sidebar: model picker -->
+    <aside class="sidebar" id="model-sidebar">
+      <div class="sidebar-header">
+        <h2>Models</h2>
+        <div id="sidebar-status" class="sidebar-status">
+          <span class="spinner" id="sidebar-spinner"></span>
+          Loading…
+        </div>
+      </div>
+      <ul class="model-list" id="model-list">
+        <!-- populated by JS -->
+      </ul>
+    </aside>
+
+    <!-- Main: inference panel -->
+    <section class="inference-panel">
+      <!-- Empty state -->
+      <div class="empty-panel" id="empty-panel">
+        <div class="empty-icon">🔮</div>
+        <h2>Select a Model</h2>
+        <p>Choose a model from the sidebar to start testing.</p>
+      </div>
+
+      <!-- Active panel (hidden until model selected) -->
+      <div class="active-panel" id="active-panel" style="display:none;">
+        <!-- Model info -->
+        <div class="panel-header">
+          <div>
+            <h2 id="panel-model-name">—</h2>
+            <p id="panel-model-desc" class="panel-desc">—</p>
+          </div>
+          <div id="panel-badges" class="panel-badges"></div>
+        </div>
+
+        <!-- Inputs -->
+        <div class="card inputs-card" id="inputs-card">
+          <h3 class="inputs-title">Input Features</h3>
+          <div id="inputs-container" class="inputs-grid">
+            <!-- generated dynamically -->
+          </div>
+        </div>
+
+        <!-- Run button -->
+        <button class="btn btn-primary btn-lg run-btn" id="run-btn">
+          <span id="run-icon">▶</span>
+          <span id="run-label">Run Inference</span>
+        </button>
+
+        <!-- Result -->
+        <div class="result-section" id="result-section" style="display:none;">
+          <h3 class="result-title">Result</h3>
+
+          <div class="result-prediction card">
+            <div class="pred-label">Prediction</div>
+            <div class="pred-value" id="pred-value">—</div>
+          </div>
+
+          <div class="prob-section" id="prob-section" style="display:none;">
+            <h4 class="prob-title">Probability Distribution</h4>
+            <div id="prob-bars" class="prob-bars"></div>
+          </div>
+
+          <!-- Raw JSON -->
+          <details class="raw-details">
+            <summary>Raw JSON Response</summary>
+            <pre class="result-box" id="raw-json"></pre>
+          </details>
+        </div>
+
+        <!-- Error -->
+        <div class="error-msg" id="error-msg" style="display:none;"></div>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  const API = 'http://localhost:8000';
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let selectedModel: any = null;
+
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  const modelList       = document.getElementById('model-list')!;
+  const sidebarStatus   = document.getElementById('sidebar-status')!;
+  const sidebarSpinner  = document.getElementById('sidebar-spinner')!;
+  const emptyPanel      = document.getElementById('empty-panel')!;
+  const activePanel     = document.getElementById('active-panel')!;
+  const panelName       = document.getElementById('panel-model-name')!;
+  const panelDesc       = document.getElementById('panel-model-desc')!;
+  const panelBadges     = document.getElementById('panel-badges')!;
+  const inputsContainer = document.getElementById('inputs-container')!;
+  const runBtn          = document.getElementById('run-btn') as HTMLButtonElement;
+  const runIcon         = document.getElementById('run-icon')!;
+  const runLabel        = document.getElementById('run-label')!;
+  const resultSection   = document.getElementById('result-section')!;
+  const predValue       = document.getElementById('pred-value')!;
+  const probSection     = document.getElementById('prob-section')!;
+  const probBars        = document.getElementById('prob-bars')!;
+  const rawJson         = document.getElementById('raw-json')!;
+  const errorMsg        = document.getElementById('error-msg')!;
+
+  // ── Load models ───────────────────────────────────────────────────────────
+  async function loadModels() {
+    try {
+      const res  = await fetch(`${API}/api/models/`);
+      const data = await res.json();
+      sidebarSpinner.style.display = 'none';
+      sidebarStatus.innerHTML = `<span style="color:var(--clr-success)">✓</span> ${data.models.length} models`;
+
+      data.models.forEach((m: any) => {
+        const li = document.createElement('li');
+        li.className   = 'model-list-item';
+        li.dataset.id  = m.id;
+        li.innerHTML = `
+          <div class="mli-icon">${m.type === 'classification' ? '🔮' : '📈'}</div>
+          <div class="mli-text">
+            <span class="mli-name">${m.name}</span>
+            <span class="mli-type">${m.type}</span>
+          </div>
+        `;
+        li.addEventListener('click', () => selectModel(m));
+        modelList.appendChild(li);
+      });
+
+      // Auto-select from URL param
+      const params    = new URLSearchParams(window.location.search);
+      const autoModel = params.get('model');
+      if (autoModel) {
+        const m = data.models.find((x: any) => x.id === autoModel);
+        if (m) selectModel(m);
+      }
+    } catch {
+      sidebarStatus.innerHTML = `<span style="color:var(--clr-danger)">✗ API offline</span>`;
+    }
+  }
+
+  // ── Select model ──────────────────────────────────────────────────────────
+  async function selectModel(m: any) {
+    selectedModel = m;
+
+    // Update sidebar highlight
+    document.querySelectorAll('.model-list-item').forEach(el => el.classList.remove('selected'));
+    const li = document.querySelector(`[data-id="${m.id}"]`);
+    if (li) li.classList.add('selected');
+
+    // Fetch full metadata (includes inputs spec)
+    const res  = await fetch(`${API}/api/models/${m.id}`);
+    const meta = await res.json();
+
+    // Header
+    panelName.textContent = meta.name;
+    panelDesc.textContent = meta.description;
+    panelBadges.innerHTML = meta.tags.map((t: string) =>
+      `<span class="badge badge-blue">${t}</span>`
+    ).join('');
+
+    // Build inputs
+    inputsContainer.innerHTML = '';
+    if (Array.isArray(meta.inputs)) {
+      meta.inputs.forEach((inp: any) => {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        group.innerHTML = `
+          <label class="form-label" for="inp-${inp.name}">
+            ${inp.label}
+            <span class="inp-value-display" id="disp-${inp.name}">${inp.default}</span>
+          </label>
+          <input
+            class="form-range"
+            type="range"
+            id="inp-${inp.name}"
+            name="${inp.name}"
+            min="${inp.min}" max="${inp.max}" step="0.1"
+            value="${inp.default}"
+          />
+          <input
+            class="form-input"
+            type="number"
+            id="num-${inp.name}"
+            min="${inp.min}" max="${inp.max}" step="0.1"
+            value="${inp.default}"
+            style="margin-top:0.35rem;"
+          />
+        `;
+        inputsContainer.appendChild(group);
+
+        const rangeEl = document.getElementById(`inp-${inp.name}`) as HTMLInputElement;
+        const numEl   = document.getElementById(`num-${inp.name}`) as HTMLInputElement;
+        const dispEl  = document.getElementById(`disp-${inp.name}`)!;
+
+        rangeEl.addEventListener('input', () => {
+          numEl.value   = rangeEl.value;
+          dispEl.textContent = rangeEl.value;
+        });
+        numEl.addEventListener('input', () => {
+          rangeEl.value = numEl.value;
+          dispEl.textContent = numEl.value;
+        });
+      });
+    } else {
+      inputsContainer.innerHTML = `<p style="color:var(--clr-muted);font-size:0.85rem;">Canvas input (coming soon)</p>`;
+    }
+
+    // Show panel
+    emptyPanel.style.display  = 'none';
+    activePanel.style.display = 'flex';
+    resultSection.style.display = 'none';
+    errorMsg.style.display      = 'none';
+  }
+
+  // ── Run inference ─────────────────────────────────────────────────────────
+  runBtn.addEventListener('click', async () => {
+    if (!selectedModel) return;
+
+    // Collect features
+    const features: number[] = [];
+    if (Array.isArray(selectedModel.inputs)) {
+      // We'll re-fetch from meta on the fly since inputs spec may differ
+      const inputs = inputsContainer.querySelectorAll('input[type="range"]');
+      inputs.forEach((el) => {
+        features.push(parseFloat((el as HTMLInputElement).value));
+      });
+    }
+
+    // Loading state
+    runBtn.disabled    = true;
+    runIcon.innerHTML  = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span>';
+    runLabel.textContent = 'Running…';
+    errorMsg.style.display    = 'none';
+
+    try {
+      const res  = await fetch(`${API}/api/models/${selectedModel.id}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ features }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail ?? 'Unknown error');
+      }
+
+      // Prediction
+      predValue.textContent = data.prediction;
+      rawJson.textContent   = JSON.stringify(data, null, 2);
+      resultSection.style.display = 'block';
+
+      // Probabilities
+      if (data.probabilities && data.probabilities.length > 0) {
+        probSection.style.display = 'block';
+        probBars.innerHTML = data.probabilities
+          .sort((a: any, b: any) => b.probability - a.probability)
+          .map((p: any) => `
+            <div class="prob-row">
+              <div class="prob-row-header">
+                <span class="prob-label">${p.label}</span>
+                <span class="prob-pct">${(p.probability * 100).toFixed(1)}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:${p.probability * 100}%"></div>
+              </div>
+            </div>
+          `).join('');
+      } else {
+        probSection.style.display = 'none';
+      }
+
+    } catch (e: any) {
+      errorMsg.style.display = 'flex';
+      errorMsg.textContent   = `Error: ${e.message}`;
+    } finally {
+      runBtn.disabled    = false;
+      runIcon.textContent  = '▶';
+      runLabel.textContent = 'Run Inference';
+    }
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  loadModels();
+</script>
+
+<style>
+  .playground-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--clr-surface);
+    border-right: 1px solid var(--clr-border);
+    padding: 1.5rem 1rem;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .sidebar-header h2 { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--clr-muted); }
+  .sidebar-status { font-size: 0.78rem; color: var(--clr-muted); display: flex; align-items: center; gap: 0.4rem; }
+
+  .model-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .model-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    border: 1px solid transparent;
+  }
+  .model-list-item:hover { background: rgba(255,255,255,0.05); }
+  .model-list-item.selected {
+    background: var(--clr-primary-glow);
+    border-color: rgba(96,165,250,0.3);
+  }
+
+  .mli-icon { font-size: 1.25rem; width: 32px; text-align: center; }
+  .mli-text { display: flex; flex-direction: column; }
+  .mli-name { font-size: 0.85rem; font-weight: 600; }
+  .mli-type { font-size: 0.72rem; color: var(--clr-muted); text-transform: capitalize; }
+
+  /* ── Inference Panel ── */
+  .inference-panel {
+    padding: 2.5rem;
+    overflow-y: auto;
+  }
+
+  .empty-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--clr-muted);
+    text-align: center;
+  }
+  .empty-icon { font-size: 4rem; }
+  .empty-panel h2 { font-size: 1.4rem; color: var(--clr-text); }
+  .empty-panel p  { font-size: 0.9rem; }
+
+  .active-panel {
+    flex-direction: column;
+    gap: 1.75rem;
+    max-width: 760px;
+  }
+
+  /* ── Panel header ── */
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  #panel-model-name { font-size: 1.6rem; font-weight: 800; }
+  .panel-desc { color: var(--clr-muted); font-size: 0.9rem; margin-top: 0.25rem; max-width: 520px; }
+  .panel-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  /* ── Inputs ── */
+  .inputs-card { padding: 1.5rem; }
+  .inputs-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--clr-muted); margin-bottom: 1.25rem; }
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .inp-value-display {
+    float: right;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--clr-primary);
+    font-weight: 600;
+  }
+
+  .run-btn { align-self: flex-start; }
+
+  /* ── Result ── */
+  .result-section { display: flex; flex-direction: column; gap: 1.25rem; }
+  .result-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--clr-muted); }
+
+  .result-prediction {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+  }
+  .pred-label { font-size: 0.8rem; color: var(--clr-muted); font-weight: 600; text-transform: uppercase; }
+  .pred-value {
+    font-size: 2rem;
+    font-weight: 900;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .prob-title { font-size: 0.85rem; font-weight: 700; color: var(--clr-muted); margin-bottom: 0.75rem; }
+  .prob-bars  { display: flex; flex-direction: column; gap: 0.6rem; }
+  .prob-row   { display: flex; flex-direction: column; gap: 0.3rem; }
+  .prob-row-header { display: flex; justify-content: space-between; align-items: center; }
+  .prob-label { font-size: 0.85rem; font-weight: 600; }
+  .prob-pct   { font-size: 0.8rem; font-family: var(--font-mono); color: var(--clr-primary); }
+
+  .raw-details {
+    color: var(--clr-muted);
+    font-size: 0.82rem;
+  }
+  .raw-details summary {
+    cursor: pointer;
+    padding: 0.5rem 0;
+    user-select: none;
+  }
+  .raw-details[open] summary { color: var(--clr-primary); }
+
+  .error-msg {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    color: #fca5a5;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 900px) {
+    .playground-layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--clr-border); }
+    .inputs-grid { grid-template-columns: 1fr; }
+  }
+</style>

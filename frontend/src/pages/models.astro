@@ -1,0 +1,96 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import ModelCard from '../components/ModelCard.astro';
+
+// Fetch models from API at build time (SSR-friendly)
+let models: any[] = [];
+let error = '';
+try {
+  const res = await fetch('http://localhost:8000/api/models/');
+  if (res.ok) {
+    const data = await res.json();
+    models = data.models;
+  } else {
+    error = 'API returned non-ok status';
+  }
+} catch (e) {
+  error = 'Could not reach API — make sure the backend is running.';
+}
+---
+
+<Layout title="Models" description="Browse all available ML models">
+  <Navbar />
+
+  <main class="section">
+    <div class="container">
+      <div class="page-header fade-in-up">
+        <h1 class="section-title gradient-text">Available Models</h1>
+        <p class="section-subtitle">Select a model to test it in the playground.</p>
+      </div>
+
+      {error ? (
+        <div class="error-banner">
+          <span>⚠️</span>
+          <div>
+            <strong>Backend not connected</strong>
+            <p>{error}</p>
+            <p class="hint">Run: <code>cd backend && uvicorn app.main:app --reload</code></p>
+          </div>
+        </div>
+      ) : models.length === 0 ? (
+        <div class="empty-state">No models found.</div>
+      ) : (
+        <div class="models-grid">
+          {models.map(m => (
+            <ModelCard
+              id={m.id}
+              name={m.name}
+              description={m.description}
+              type={m.type}
+              tags={m.tags}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .page-header { margin-bottom: 2rem; }
+
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .error-banner {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem;
+    color: #fca5a5;
+  }
+  .error-banner span { font-size: 1.5rem; }
+  .error-banner strong { display: block; margin-bottom: 0.25rem; }
+  .error-banner p { font-size: 0.85rem; opacity: 0.8; margin-top: 0.25rem; }
+  .error-banner .hint { margin-top: 0.75rem; }
+  .error-banner code {
+    background: rgba(0,0,0,0.3);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  .empty-state {
+    color: var(--clr-muted);
+    text-align: center;
+    padding: 4rem;
+  }
+</style>
