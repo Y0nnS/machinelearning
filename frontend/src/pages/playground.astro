@@ -1,449 +1,590 @@
+---
+import {
+  Activity,
+  Bot,
+  Cpu,
+  Database,
+  Eraser,
+  Flower2,
+  Grid3X3,
+  MessageSquare,
+  Play,
+  PlugZap,
+  Send,
+  SlidersHorizontal,
+} from 'lucide-astro';
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
+---
 
-<Layout title="Playground" description="Test ML models interactively">
+<Layout title="Playground" description="Test local and external AI engines">
   <Navbar />
 
-  <main class="playground-layout">
-    <!-- Sidebar: model picker -->
-    <aside class="sidebar" id="model-sidebar">
-      <div class="sidebar-header">
-        <h2>Models</h2>
-        <div id="sidebar-status" class="sidebar-status">
-          <span class="spinner" id="sidebar-spinner"></span>
-          Loading…
-        </div>
-      </div>
-      <ul class="model-list" id="model-list">
-        <!-- populated by JS -->
-      </ul>
-    </aside>
-
-    <!-- Main: inference panel -->
-    <section class="inference-panel">
-      <!-- Empty state -->
-      <div class="empty-panel" id="empty-panel">
-        <div class="empty-icon">🔮</div>
-        <h2>Select a Model</h2>
-        <p>Choose a model from the sidebar to start testing.</p>
-      </div>
-
-      <!-- Active panel (hidden until model selected) -->
-      <div class="active-panel" id="active-panel" style="display:none;">
-        <!-- Model info -->
-        <div class="panel-header">
-          <div>
-            <h2 id="panel-model-name">—</h2>
-            <p id="panel-model-desc" class="panel-desc">—</p>
-          </div>
-          <div id="panel-badges" class="panel-badges"></div>
-        </div>
-
-        <!-- Inputs -->
-        <div class="card inputs-card" id="inputs-card">
-          <h3 class="inputs-title">Input Features</h3>
-          <div id="inputs-container" class="inputs-grid">
-            <!-- generated dynamically -->
-          </div>
-        </div>
-
-        <!-- Run button -->
-        <button class="btn btn-primary btn-lg run-btn" id="run-btn">
-          <span id="run-icon">▶</span>
-          <span id="run-label">Run Inference</span>
+  <main class="page lab-page">
+    <div class="app-container lab-shell">
+      <aside class="panel tool-rail" aria-label="AI tools">
+        <button class="tool-tab active" type="button" data-tool="text">
+          <MessageSquare size={17} />
+          <span>Text</span>
         </button>
+        <button class="tool-tab" type="button" data-tool="iris">
+          <Flower2 size={17} />
+          <span>Iris</span>
+        </button>
+        <button class="tool-tab" type="button" data-tool="digits">
+          <Grid3X3 size={17} />
+          <span>Digit</span>
+        </button>
+        <button class="tool-tab" type="button" data-tool="external">
+          <PlugZap size={17} />
+          <span>API</span>
+        </button>
+      </aside>
 
-        <!-- Result -->
-        <div class="result-section" id="result-section" style="display:none;">
-          <h3 class="result-title">Result</h3>
-
-          <div class="result-prediction card">
-            <div class="pred-label">Prediction</div>
-            <div class="pred-value" id="pred-value">—</div>
+      <section class="panel work-panel">
+        <div class="work-top">
+          <div>
+            <div class="eyebrow" id="tool-runtime">go runtime</div>
+            <h1 class="mini-title" id="tool-title">Text AI</h1>
           </div>
-
-          <div class="prob-section" id="prob-section" style="display:none;">
-            <h4 class="prob-title">Probability Distribution</h4>
-            <div id="prob-bars" class="prob-bars"></div>
+          <div class="runtime-chips" id="runtime-chips">
+            <span class="chip amber">checking</span>
           </div>
-
-          <!-- Raw JSON -->
-          <details class="raw-details">
-            <summary>Raw JSON Response</summary>
-            <pre class="result-box" id="raw-json"></pre>
-          </details>
         </div>
 
-        <!-- Error -->
-        <div class="error-msg" id="error-msg" style="display:none;"></div>
-      </div>
-    </section>
+        <div class="tool-screen active" data-screen="text">
+          <div class="field">
+            <label for="text-input">Prompt</label>
+            <textarea id="text-input" class="textarea" rows="8" placeholder="Tulis prompt...">aku lagi belajar bikin backend ai pakai go, python, dan api external</textarea>
+          </div>
+          <div class="action-row">
+            <button class="button primary" type="button" id="text-run">
+              <Play size={16} />
+              Analyze
+            </button>
+          </div>
+        </div>
+
+        <div class="tool-screen" data-screen="iris">
+          <div class="slider-list">
+            <div class="field-row">
+              <label for="iris-sepal-length">Sepal length <span id="iris-sepal-length-value">5.1</span></label>
+              <input class="range" id="iris-sepal-length" data-iris="sepal-length" type="range" min="0" max="10" step="0.1" value="5.1" />
+            </div>
+            <div class="field-row">
+              <label for="iris-sepal-width">Sepal width <span id="iris-sepal-width-value">3.5</span></label>
+              <input class="range" id="iris-sepal-width" data-iris="sepal-width" type="range" min="0" max="10" step="0.1" value="3.5" />
+            </div>
+            <div class="field-row">
+              <label for="iris-petal-length">Petal length <span id="iris-petal-length-value">1.4</span></label>
+              <input class="range" id="iris-petal-length" data-iris="petal-length" type="range" min="0" max="10" step="0.1" value="1.4" />
+            </div>
+            <div class="field-row">
+              <label for="iris-petal-width">Petal width <span id="iris-petal-width-value">0.2</span></label>
+              <input class="range" id="iris-petal-width" data-iris="petal-width" type="range" min="0" max="10" step="0.1" value="0.2" />
+            </div>
+          </div>
+          <div class="action-row">
+            <button class="button primary" type="button" id="iris-run">
+              <SlidersHorizontal size={16} />
+              Predict
+            </button>
+          </div>
+        </div>
+
+        <div class="tool-screen" data-screen="digits">
+          <div class="digit-wrap">
+            <div class="digit-grid" id="digit-grid" aria-label="8 by 8 digit grid"></div>
+          </div>
+          <div class="action-row split">
+            <button class="button" type="button" id="digit-clear">
+              <Eraser size={16} />
+              Clear
+            </button>
+            <button class="button primary" type="button" id="digit-run">
+              <Grid3X3 size={16} />
+              Predict
+            </button>
+          </div>
+        </div>
+
+        <div class="tool-screen" data-screen="external" id="external">
+          <div class="field">
+            <label for="external-model">Model</label>
+            <input id="external-model" class="input" placeholder="backend default" />
+          </div>
+          <div class="field">
+            <label for="external-message">Message</label>
+            <textarea id="external-message" class="textarea" rows="8" placeholder="Kirim ke provider external...">jelaskan neural network dengan contoh kecil</textarea>
+          </div>
+          <div class="action-row">
+            <button class="button primary" type="button" id="external-run">
+              <Send size={16} />
+              Send
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel output-panel" aria-live="polite">
+        <div class="output-head">
+          <span class="icon-tile"><Activity size={18} /></span>
+          <div>
+            <div class="eyebrow">output</div>
+            <h2 class="mini-title" id="result-label">Idle</h2>
+          </div>
+        </div>
+
+        <div class="result-meta">
+          <span class="chip" id="result-meta">waiting</span>
+          <span class="chip blue" id="result-engine">none</span>
+        </div>
+
+        <div class="prob-list" id="prob-list"></div>
+        <pre class="result-box" id="result-json">Run an experiment.</pre>
+      </aside>
+    </div>
   </main>
 </Layout>
 
 <script>
-  const API = 'http://localhost:8000';
+  function getApiBase() {
+    const params = new URLSearchParams(window.location.search);
+    const fromParam = params.get('api');
+    if (fromParam) {
+      localStorage.setItem('ai_lab_api', fromParam);
+      return fromParam.replace(/\/$/, '');
+    }
+    return (localStorage.getItem('ai_lab_api') || 'http://localhost:8000').replace(/\/$/, '');
+  }
 
-  // ── State ─────────────────────────────────────────────────────────────────
-  let selectedModel: any = null;
+  const API = getApiBase();
 
-  // ── DOM refs ──────────────────────────────────────────────────────────────
-  const modelList       = document.getElementById('model-list')!;
-  const sidebarStatus   = document.getElementById('sidebar-status')!;
-  const sidebarSpinner  = document.getElementById('sidebar-spinner')!;
-  const emptyPanel      = document.getElementById('empty-panel')!;
-  const activePanel     = document.getElementById('active-panel')!;
-  const panelName       = document.getElementById('panel-model-name')!;
-  const panelDesc       = document.getElementById('panel-model-desc')!;
-  const panelBadges     = document.getElementById('panel-badges')!;
-  const inputsContainer = document.getElementById('inputs-container')!;
-  const runBtn          = document.getElementById('run-btn') as HTMLButtonElement;
-  const runIcon         = document.getElementById('run-icon')!;
-  const runLabel        = document.getElementById('run-label')!;
-  const resultSection   = document.getElementById('result-section')!;
-  const predValue       = document.getElementById('pred-value')!;
-  const probSection     = document.getElementById('prob-section')!;
-  const probBars        = document.getElementById('prob-bars')!;
-  const rawJson         = document.getElementById('raw-json')!;
-  const errorMsg        = document.getElementById('error-msg')!;
+  const toolMeta = {
+    text: { title: 'Text AI', runtime: 'go runtime' },
+    iris: { title: 'Iris classifier', runtime: 'python / sklearn' },
+    digits: { title: 'Digit recognizer', runtime: 'python / sklearn' },
+    external: { title: 'External API', runtime: 'http provider' },
+  };
 
-  // ── Load models ───────────────────────────────────────────────────────────
-  async function loadModels() {
-    try {
-      const res  = await fetch(`${API}/api/models/`);
-      const data = await res.json();
-      sidebarSpinner.style.display = 'none';
-      sidebarStatus.innerHTML = `<span style="color:var(--clr-success)">✓</span> ${data.models.length} models`;
+  const resultLabel = document.getElementById('result-label');
+  const resultMeta = document.getElementById('result-meta');
+  const resultEngine = document.getElementById('result-engine');
+  const resultJson = document.getElementById('result-json');
+  const probList = document.getElementById('prob-list');
+  const toolTitle = document.getElementById('tool-title');
+  const toolRuntime = document.getElementById('tool-runtime');
 
-      data.models.forEach((m: any) => {
-        const li = document.createElement('li');
-        li.className   = 'model-list-item';
-        li.dataset.id  = m.id;
-        li.innerHTML = `
-          <div class="mli-icon">${m.type === 'classification' ? '🔮' : '📈'}</div>
-          <div class="mli-text">
-            <span class="mli-name">${m.name}</span>
-            <span class="mli-type">${m.type}</span>
-          </div>
-        `;
-        li.addEventListener('click', () => selectModel(m));
-        modelList.appendChild(li);
+  function setTool(tool) {
+    document.querySelectorAll('[data-tool]').forEach((button) => {
+      button.classList.toggle('active', button.getAttribute('data-tool') === tool);
+    });
+    document.querySelectorAll('[data-screen]').forEach((screen) => {
+      screen.classList.toggle('active', screen.getAttribute('data-screen') === tool);
+    });
+
+    const meta = toolMeta[tool] || toolMeta.text;
+    if (toolTitle) toolTitle.textContent = meta.title;
+    if (toolRuntime) toolRuntime.textContent = meta.runtime;
+  }
+
+  function setBusy(button, busy) {
+    if (!button) return;
+    if (busy) button.setAttribute('disabled', 'true');
+    else button.removeAttribute('disabled');
+  }
+
+  function setOutput(label, engine, data, probabilities = []) {
+    if (resultLabel) resultLabel.textContent = label;
+    if (resultEngine) resultEngine.textContent = engine;
+    if (resultMeta) resultMeta.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (resultJson) resultJson.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    renderProbabilities(probabilities);
+  }
+
+  function renderProbabilities(probabilities) {
+    if (!probList) return;
+    probList.innerHTML = '';
+    if (!Array.isArray(probabilities) || probabilities.length === 0) return;
+
+    probabilities
+      .slice()
+      .sort((a, b) => b.probability - a.probability)
+      .forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'prob-row';
+
+        const label = document.createElement('span');
+        label.textContent = item.label;
+
+        const meter = document.createElement('div');
+        meter.className = 'meter';
+        const fill = document.createElement('span');
+        fill.style.width = `${Math.max(0, Math.min(100, item.probability * 100))}%`;
+        meter.appendChild(fill);
+
+        const value = document.createElement('span');
+        value.className = 'mono';
+        value.textContent = `${(item.probability * 100).toFixed(1)}%`;
+
+        row.append(label, meter, value);
+        probList.appendChild(row);
       });
+  }
 
-      // Auto-select from URL param
-      const params    = new URLSearchParams(window.location.search);
-      const autoModel = params.get('model');
-      if (autoModel) {
-        const m = data.models.find((x: any) => x.id === autoModel);
-        if (m) selectModel(m);
-      }
+  async function postJson(path, payload) {
+    const response = await fetch(`${API}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Request failed');
+    return data;
+  }
+
+  async function refreshEngines() {
+    const target = document.getElementById('runtime-chips');
+    if (!target) return;
+
+    try {
+      const response = await fetch(`${API}/api/lab/engines`);
+      if (!response.ok) throw new Error('offline');
+      const data = await response.json();
+      target.innerHTML = '';
+      data.engines.forEach((engine) => {
+        const chip = document.createElement('span');
+        chip.className = `chip ${engine.status === 'ready' ? 'green' : engine.status === 'unconfigured' || engine.status === 'unavailable' || engine.status === 'fallback' ? 'amber' : ''}`;
+        chip.textContent = `${engine.runtime}: ${engine.status}`;
+        target.appendChild(chip);
+      });
     } catch {
-      sidebarStatus.innerHTML = `<span style="color:var(--clr-danger)">✗ API offline</span>`;
+      target.innerHTML = '<span class="chip amber">backend offline</span>';
     }
   }
 
-  // ── Select model ──────────────────────────────────────────────────────────
-  async function selectModel(m: any) {
-    selectedModel = m;
+  document.querySelectorAll('[data-tool]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setTool(button.getAttribute('data-tool') || 'text');
+    });
+  });
 
-    // Update sidebar highlight
-    document.querySelectorAll('.model-list-item').forEach(el => el.classList.remove('selected'));
-    const li = document.querySelector(`[data-id="${m.id}"]`);
-    if (li) li.classList.add('selected');
+  document.querySelectorAll('[data-iris]').forEach((input) => {
+    const id = input.getAttribute('data-iris');
+    const value = document.getElementById(`iris-${id}-value`);
+    input.addEventListener('input', () => {
+      if (value) value.textContent = input.value;
+    });
+  });
 
-    // Fetch full metadata (includes inputs spec)
-    const res  = await fetch(`${API}/api/models/${m.id}`);
-    const meta = await res.json();
+  document.getElementById('text-run')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const text = document.getElementById('text-input')?.value?.trim();
+    if (!text) return;
 
-    // Header
-    panelName.textContent = meta.name;
-    panelDesc.textContent = meta.description;
-    panelBadges.innerHTML = meta.tags.map((t: string) =>
-      `<span class="badge badge-blue">${t}</span>`
-    ).join('');
-
-    // Build inputs
-    inputsContainer.innerHTML = '';
-    if (Array.isArray(meta.inputs)) {
-      meta.inputs.forEach((inp: any) => {
-        const group = document.createElement('div');
-        group.className = 'form-group';
-        group.innerHTML = `
-          <label class="form-label" for="inp-${inp.name}">
-            ${inp.label}
-            <span class="inp-value-display" id="disp-${inp.name}">${inp.default}</span>
-          </label>
-          <input
-            class="form-range"
-            type="range"
-            id="inp-${inp.name}"
-            name="${inp.name}"
-            min="${inp.min}" max="${inp.max}" step="0.1"
-            value="${inp.default}"
-          />
-          <input
-            class="form-input"
-            type="number"
-            id="num-${inp.name}"
-            min="${inp.min}" max="${inp.max}" step="0.1"
-            value="${inp.default}"
-            style="margin-top:0.35rem;"
-          />
-        `;
-        inputsContainer.appendChild(group);
-
-        const rangeEl = document.getElementById(`inp-${inp.name}`) as HTMLInputElement;
-        const numEl   = document.getElementById(`num-${inp.name}`) as HTMLInputElement;
-        const dispEl  = document.getElementById(`disp-${inp.name}`)!;
-
-        rangeEl.addEventListener('input', () => {
-          numEl.value   = rangeEl.value;
-          dispEl.textContent = rangeEl.value;
-        });
-        numEl.addEventListener('input', () => {
-          rangeEl.value = numEl.value;
-          dispEl.textContent = numEl.value;
-        });
-      });
-    } else {
-      inputsContainer.innerHTML = `<p style="color:var(--clr-muted);font-size:0.85rem;">Canvas input (coming soon)</p>`;
-    }
-
-    // Show panel
-    emptyPanel.style.display  = 'none';
-    activePanel.style.display = 'flex';
-    resultSection.style.display = 'none';
-    errorMsg.style.display      = 'none';
-  }
-
-  // ── Run inference ─────────────────────────────────────────────────────────
-  runBtn.addEventListener('click', async () => {
-    if (!selectedModel) return;
-
-    // Collect features
-    const features: number[] = [];
-    if (Array.isArray(selectedModel.inputs)) {
-      // We'll re-fetch from meta on the fly since inputs spec may differ
-      const inputs = inputsContainer.querySelectorAll('input[type="range"]');
-      inputs.forEach((el) => {
-        features.push(parseFloat((el as HTMLInputElement).value));
-      });
-    }
-
-    // Loading state
-    runBtn.disabled    = true;
-    runIcon.innerHTML  = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span>';
-    runLabel.textContent = 'Running…';
-    errorMsg.style.display    = 'none';
-
+    setBusy(button, true);
+    setOutput('Running', 'go_text_ai', 'running...');
     try {
-      const res  = await fetch(`${API}/api/models/${selectedModel.id}/predict`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ features }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.detail ?? 'Unknown error');
-      }
-
-      // Prediction
-      predValue.textContent = data.prediction;
-      rawJson.textContent   = JSON.stringify(data, null, 2);
-      resultSection.style.display = 'block';
-
-      // Probabilities
-      if (data.probabilities && data.probabilities.length > 0) {
-        probSection.style.display = 'block';
-        probBars.innerHTML = data.probabilities
-          .sort((a: any, b: any) => b.probability - a.probability)
-          .map((p: any) => `
-            <div class="prob-row">
-              <div class="prob-row-header">
-                <span class="prob-label">${p.label}</span>
-                <span class="prob-pct">${(p.probability * 100).toFixed(1)}%</span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width:${p.probability * 100}%"></div>
-              </div>
-            </div>
-          `).join('');
-      } else {
-        probSection.style.display = 'none';
-      }
-
-    } catch (e: any) {
-      errorMsg.style.display = 'flex';
-      errorMsg.textContent   = `Error: ${e.message}`;
+      const data = await postJson('/api/lab/text/analyze', { text });
+      setOutput(data.label, data.engine, data);
+    } catch (error) {
+      setOutput('Error', 'go_text_ai', error instanceof Error ? error.message : 'Request failed');
     } finally {
-      runBtn.disabled    = false;
-      runIcon.textContent  = '▶';
-      runLabel.textContent = 'Run Inference';
+      setBusy(button, false);
     }
   });
 
-  // ── Init ──────────────────────────────────────────────────────────────────
-  loadModels();
+  document.getElementById('iris-run')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const features = Array.from(document.querySelectorAll('[data-iris]')).map((input) => Number(input.value));
+
+    setBusy(button, true);
+    setOutput('Running', 'iris_classifier', 'running...');
+    try {
+      const data = await postJson('/api/models/iris_classifier/predict', { features });
+      setOutput(data.prediction, data.model_id, data, data.probabilities);
+    } catch (error) {
+      setOutput('Error', 'iris_classifier', error instanceof Error ? error.message : 'Request failed');
+    } finally {
+      setBusy(button, false);
+    }
+  });
+
+  const digitGrid = document.getElementById('digit-grid');
+  const digitValues = Array(64).fill(0);
+  const digitCells = [];
+  let isPainting = false;
+
+  function paintDigit(index, value = 16) {
+    digitValues[index] = value;
+    const cell = digitCells[index];
+    if (!cell) return;
+    const level = value / 16;
+    cell.style.background = value > 0 ? `rgba(244, 244, 245, ${0.25 + level * 0.75})` : '#050505';
+    cell.setAttribute('aria-pressed', value > 0 ? 'true' : 'false');
+  }
+
+  if (digitGrid) {
+    for (let index = 0; index < 64; index += 1) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'digit-cell';
+      cell.setAttribute('aria-label', `pixel ${index + 1}`);
+      cell.setAttribute('aria-pressed', 'false');
+      cell.addEventListener('pointerdown', (event) => {
+        isPainting = true;
+        paintDigit(index, event.shiftKey ? 0 : 16);
+      });
+      cell.addEventListener('pointerenter', () => {
+        if (isPainting) paintDigit(index, 16);
+      });
+      digitCells.push(cell);
+      digitGrid.appendChild(cell);
+    }
+  }
+
+  document.addEventListener('pointerup', () => {
+    isPainting = false;
+  });
+
+  document.getElementById('digit-clear')?.addEventListener('click', () => {
+    digitValues.forEach((_, index) => paintDigit(index, 0));
+    setOutput('Cleared', 'digits_classifier', 'Draw a digit.');
+  });
+
+  document.getElementById('digit-run')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    setBusy(button, true);
+    setOutput('Running', 'digits_classifier', 'running...');
+    try {
+      const data = await postJson('/api/models/digits_classifier/predict', { features: digitValues });
+      setOutput(data.prediction, data.model_id, data, data.probabilities);
+    } catch (error) {
+      setOutput('Error', 'digits_classifier', error instanceof Error ? error.message : 'Request failed');
+    } finally {
+      setBusy(button, false);
+    }
+  });
+
+  document.getElementById('external-run')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const message = document.getElementById('external-message')?.value?.trim();
+    const model = document.getElementById('external-model')?.value?.trim();
+    if (!message) return;
+
+    setBusy(button, true);
+    setOutput('Running', 'external_ai', 'running...');
+    try {
+      const data = await postJson('/api/lab/external/chat', { message, model: model || undefined });
+      setOutput(data.model, data.engine, data.content || data);
+    } catch (error) {
+      setOutput('Error', 'external_ai', error instanceof Error ? error.message : 'Request failed');
+    } finally {
+      setBusy(button, false);
+    }
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const model = params.get('model');
+  if (model === 'iris_classifier') setTool('iris');
+  else if (model === 'digits_classifier') setTool('digits');
+  else if (window.location.hash === '#external') setTool('external');
+  else setTool('text');
+
+  refreshEngines();
 </script>
 
 <style>
-  .playground-layout {
+  .lab-page {
+    padding-bottom: 18px;
+  }
+
+  .lab-shell {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    min-height: calc(100vh - 60px);
+    grid-template-columns: 170px minmax(0, 1fr) minmax(320px, 0.72fr);
+    gap: 14px;
+    min-height: calc(100vh - var(--nav-height) - 56px);
   }
 
-  /* ── Sidebar ── */
-  .sidebar {
-    background: var(--clr-surface);
-    border-right: 1px solid var(--clr-border);
-    padding: 1.5rem 1rem;
-    overflow-y: auto;
-  }
-
-  .sidebar-header {
+  .tool-rail {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
   }
-  .sidebar-header h2 { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--clr-muted); }
-  .sidebar-status { font-size: 0.78rem; color: var(--clr-muted); display: flex; align-items: center; gap: 0.4rem; }
 
-  .model-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
-
-  .model-list-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 0.85rem;
-    border-radius: var(--radius-sm);
+  .tool-tab {
+    justify-content: flex-start;
+    width: 100%;
+    padding: 0 12px;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    border: 1px solid transparent;
-  }
-  .model-list-item:hover { background: rgba(255,255,255,0.05); }
-  .model-list-item.selected {
-    background: var(--clr-primary-glow);
-    border-color: rgba(96,165,250,0.3);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 750;
   }
 
-  .mli-icon { font-size: 1.25rem; width: 32px; text-align: center; }
-  .mli-text { display: flex; flex-direction: column; }
-  .mli-name { font-size: 0.85rem; font-weight: 600; }
-  .mli-type { font-size: 0.72rem; color: var(--clr-muted); text-transform: capitalize; }
-
-  /* ── Inference Panel ── */
-  .inference-panel {
-    padding: 2.5rem;
-    overflow-y: auto;
+  .tool-tab:hover,
+  .tool-tab.active {
+    border-color: var(--border);
+    background: var(--surface-2);
+    color: var(--text);
   }
 
-  .empty-panel {
-    height: 100%;
+  .tool-tab.active svg {
+    color: var(--accent);
+  }
+
+  .work-panel,
+  .output-panel {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    color: var(--clr-muted);
-    text-align: center;
-  }
-  .empty-icon { font-size: 4rem; }
-  .empty-panel h2 { font-size: 1.4rem; color: var(--clr-text); }
-  .empty-panel p  { font-size: 0.9rem; }
-
-  .active-panel {
-    flex-direction: column;
-    gap: 1.75rem;
-    max-width: 760px;
+    min-width: 0;
+    padding: 18px;
   }
 
-  /* ── Panel header ── */
-  .panel-header {
+  .work-top {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
-    gap: 1rem;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
   }
-  #panel-model-name { font-size: 1.6rem; font-weight: 800; }
-  .panel-desc { color: var(--clr-muted); font-size: 0.9rem; margin-top: 0.25rem; max-width: 520px; }
-  .panel-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
-  /* ── Inputs ── */
-  .inputs-card { padding: 1.5rem; }
-  .inputs-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--clr-muted); margin-bottom: 1.25rem; }
-  .inputs-grid {
+  .runtime-chips,
+  .result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .tool-screen {
+    display: none;
+    flex: 1;
+  }
+
+  .tool-screen.active {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+    align-content: start;
+    gap: 16px;
   }
 
-  .inp-value-display {
-    float: right;
+  .slider-list {
+    display: grid;
+    gap: 18px;
+  }
+
+  .field-row {
+    display: grid;
+    gap: 8px;
+  }
+
+  .field-row label {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .field-row span {
+    color: var(--accent);
     font-family: var(--font-mono);
-    font-size: 0.85rem;
-    color: var(--clr-primary);
-    font-weight: 600;
   }
 
-  .run-btn { align-self: flex-start; }
+  .action-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
 
-  /* ── Result ── */
-  .result-section { display: flex; flex-direction: column; gap: 1.25rem; }
-  .result-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--clr-muted); }
+  .action-row.split {
+    justify-content: space-between;
+  }
 
-  .result-prediction {
+  .digit-wrap {
+    display: grid;
+    justify-content: start;
+  }
+
+  .digit-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 32px);
+    grid-template-rows: repeat(8, 32px);
+    gap: 5px;
+    touch-action: none;
+  }
+
+  .digit-cell {
+    width: 32px;
+    height: 32px;
+    cursor: crosshair;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: #050505;
+  }
+
+  .digit-cell:hover {
+    border-color: var(--accent);
+  }
+
+  .output-panel {
+    gap: 14px;
+  }
+
+  .output-head {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    padding: 1.25rem 1.5rem;
-  }
-  .pred-label { font-size: 0.8rem; color: var(--clr-muted); font-weight: 600; text-transform: uppercase; }
-  .pred-value {
-    font-size: 2rem;
-    font-weight: 900;
-    background: var(--grad-text);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    gap: 12px;
   }
 
-  .prob-title { font-size: 0.85rem; font-weight: 700; color: var(--clr-muted); margin-bottom: 0.75rem; }
-  .prob-bars  { display: flex; flex-direction: column; gap: 0.6rem; }
-  .prob-row   { display: flex; flex-direction: column; gap: 0.3rem; }
-  .prob-row-header { display: flex; justify-content: space-between; align-items: center; }
-  .prob-label { font-size: 0.85rem; font-weight: 600; }
-  .prob-pct   { font-size: 0.8rem; font-family: var(--font-mono); color: var(--clr-primary); }
-
-  .raw-details {
-    color: var(--clr-muted);
-    font-size: 0.82rem;
-  }
-  .raw-details summary {
-    cursor: pointer;
-    padding: 0.5rem 0;
-    user-select: none;
-  }
-  .raw-details[open] summary { color: var(--clr-primary); }
-
-  .error-msg {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(248,113,113,0.08);
-    border: 1px solid rgba(248,113,113,0.25);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem 1rem;
-    color: #fca5a5;
-    font-size: 0.85rem;
+  .output-panel .result-box {
+    flex: 1;
+    min-height: 240px;
   }
 
-  @media (max-width: 900px) {
-    .playground-layout { grid-template-columns: 1fr; }
-    .sidebar { border-right: none; border-bottom: 1px solid var(--clr-border); }
-    .inputs-grid { grid-template-columns: 1fr; }
+  .prob-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  @media (max-width: 1060px) {
+    .lab-shell {
+      grid-template-columns: 1fr;
+    }
+
+    .tool-rail {
+      flex-direction: row;
+      overflow-x: auto;
+    }
+
+    .tool-tab {
+      width: auto;
+      min-width: 112px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .work-top,
+    .result-meta {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .runtime-chips {
+      justify-content: flex-start;
+    }
+
+    .digit-grid {
+      grid-template-columns: repeat(8, minmax(24px, 1fr));
+      grid-template-rows: repeat(8, 1fr);
+      width: min(100%, 296px);
+      aspect-ratio: 1;
+    }
+
+    .digit-cell {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+    }
   }
 </style>

@@ -17,5 +17,12 @@
     "astro": "^6.2.1",
     "lucide-astro": "^0.556.0",
     "tailwindcss": "^4.2.4"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }

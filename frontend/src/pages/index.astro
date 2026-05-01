@@ -1,80 +1,261 @@
 ---
+import { Boxes, BrainCircuit, Cpu, Database, Play, PlugZap, SquareTerminal } from 'lucide-astro';
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 ---
 
-<Layout title="Nexus AI - Multi-Language ML Backend">
+<Layout title="AI Lab" description="Local AI playground with Python and Go engines">
   <Navbar />
 
-  <main class="flex-1 flex flex-col items-center justify-center p-6 text-center mt-12 mb-20">
-    <div class="max-w-4xl w-full flex flex-col items-center gap-8 fade-in-up">
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-muted">
-        <svg class="w-3.5 h-3.5 text-accent" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Ready to Train
-      </div>
+  <main class="page">
+    <div class="app-container home-grid">
+      <section class="hero-copy">
+        <div class="eyebrow">local ai lab</div>
+        <h1 class="title">Build. Test. Learn.</h1>
+        <p class="subtitle">Python models, Go engine, optional external API. One dark workspace for fast AI experiments.</p>
 
-      <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-tight">
-        Teach your AI, <br />
-        <span class="text-accent">your way.</span>
-      </h1>
+        <div class="hero-actions">
+          <a class="button primary" href="/playground">
+            <SquareTerminal size={17} />
+            Playground
+          </a>
+          <a class="button" href="/models">
+            <Boxes size={17} />
+            Models
+          </a>
+        </div>
+      </section>
 
-      <p class="text-lg text-text-muted max-w-xl mx-auto leading-relaxed">
-        A polyglot machine learning backend supporting Python, C++, Rust, and Go. High performance inference meets a beautiful minimal frontend.
-      </p>
-
-      <div class="flex items-center gap-4 mt-2">
-        <a href="/playground" class="px-6 py-3 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all inline-flex items-center gap-2 shadow-[0_0_24px_rgba(59,130,246,0.3)] hover:shadow-[0_0_32px_rgba(59,130,246,0.5)]">
-          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Open Playground
-        </a>
-        <a href="/models" class="px-6 py-3 rounded-lg bg-surface border border-border text-text-main text-sm font-medium hover:bg-border transition-colors">
-          Browse Models
-        </a>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-20 text-left">
-        <div class="p-6 rounded-2xl bg-surface/50 border border-border flex flex-col gap-4 hover:border-border/80 transition-colors">
-          <div class="w-10 h-10 rounded-lg bg-border/50 flex items-center justify-center text-accent">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
-          </div>
+      <section class="panel panel-pad quick-lab" aria-label="Quick text AI">
+        <div class="quick-head">
+          <span class="icon-tile"><BrainCircuit size={18} /></span>
           <div>
-            <h3 class="font-medium text-white mb-1.5">Polyglot Core</h3>
-            <p class="text-sm text-text-muted leading-relaxed">Mix languages for maximum performance. Heavy lifting in Rust/C++, logic in Go/Python.</p>
+            <div class="eyebrow">go engine</div>
+            <h2 class="mini-title">Text probe</h2>
           </div>
         </div>
-        <div class="p-6 rounded-2xl bg-surface/50 border border-border flex flex-col gap-4 hover:border-border/80 transition-colors">
-          <div class="w-10 h-10 rounded-lg bg-border/50 flex items-center justify-center text-accent">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
-          </div>
-          <div>
-            <h3 class="font-medium text-white mb-1.5">Manual Training</h3>
-            <p class="text-sm text-text-muted leading-relaxed">Interactive interfaces to manually curate, train, and test your models instantly.</p>
-          </div>
+
+        <form id="quick-form" class="quick-form">
+          <textarea
+            id="quick-input"
+            class="textarea"
+            rows="5"
+            placeholder="Tulis prompt pendek..."
+          >aku mau belajar backend ai pakai go dan python</textarea>
+          <button class="button primary" id="quick-run" type="submit">
+            <Play size={16} />
+            Run
+          </button>
+        </form>
+
+        <pre class="result-box" id="quick-output">idle</pre>
+      </section>
+    </div>
+
+    <div class="app-container runtime-grid">
+      <article class="runtime-item panel panel-pad" data-engine-card="python_sklearn">
+        <Database size={18} />
+        <div>
+          <strong>Python</strong>
+          <span id="engine-python_sklearn">checking</span>
         </div>
-        <div class="p-6 rounded-2xl bg-surface/50 border border-border flex flex-col gap-4 hover:border-border/80 transition-colors">
-          <div class="w-10 h-10 rounded-lg bg-border/50 flex items-center justify-center text-accent">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          </div>
-          <div>
-            <h3 class="font-medium text-white mb-1.5">Real-time Inference</h3>
-            <p class="text-sm text-text-muted leading-relaxed">Low latency REST & gRPC APIs designed for rapid prototyping and deployment.</p>
-          </div>
+      </article>
+
+      <article class="runtime-item panel panel-pad" data-engine-card="go_text_ai">
+        <Cpu size={18} />
+        <div>
+          <strong>Go</strong>
+          <span id="engine-go_text_ai">checking</span>
         </div>
-      </div>
+      </article>
+
+      <article class="runtime-item panel panel-pad" data-engine-card="external_ai">
+        <PlugZap size={18} />
+        <div>
+          <strong>API</strong>
+          <span id="engine-external_ai">checking</span>
+        </div>
+      </article>
     </div>
   </main>
 </Layout>
 
-<style>
-  .fade-in-up {
-    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
-    transform: translateY(20px);
+<script>
+  function getApiBase() {
+    const params = new URLSearchParams(window.location.search);
+    const fromParam = params.get('api');
+    if (fromParam) {
+      localStorage.setItem('ai_lab_api', fromParam);
+      return fromParam.replace(/\/$/, '');
+    }
+    return (localStorage.getItem('ai_lab_api') || 'http://localhost:8000').replace(/\/$/, '');
   }
-  @keyframes fadeInUp {
-    to {
-      opacity: 1;
-      transform: translateY(0);
+
+  const API = getApiBase();
+  const quickForm = document.getElementById('quick-form');
+  const quickInput = document.getElementById('quick-input');
+  const quickOutput = document.getElementById('quick-output');
+  const quickRun = document.getElementById('quick-run');
+
+  function printQuick(value) {
+    if (quickOutput) quickOutput.textContent = value;
+  }
+
+  async function refreshEngines() {
+    try {
+      const response = await fetch(`${API}/api/lab/engines`);
+      if (!response.ok) throw new Error('Backend offline');
+      const data = await response.json();
+
+      data.engines.forEach((engine) => {
+        const target = document.getElementById(`engine-${engine.id}`);
+        const card = document.querySelector(`[data-engine-card="${engine.id}"]`);
+        if (target) target.textContent = engine.status;
+        if (card) card.setAttribute('data-status', engine.status);
+      });
+    } catch {
+      ['python_sklearn', 'go_text_ai', 'external_ai'].forEach((id) => {
+        const target = document.getElementById(`engine-${id}`);
+        const card = document.querySelector(`[data-engine-card="${id}"]`);
+        if (target) target.textContent = 'offline';
+        if (card) card.setAttribute('data-status', 'offline');
+      });
+    }
+  }
+
+  quickForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const text = quickInput?.value?.trim();
+    if (!text) return;
+
+    quickRun?.setAttribute('disabled', 'true');
+    printQuick('running...');
+
+    try {
+      const response = await fetch(`${API}/api/lab/text/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Request failed');
+      printQuick(JSON.stringify(data, null, 2));
+    } catch (error) {
+      printQuick(error instanceof Error ? error.message : 'Request failed');
+    } finally {
+      quickRun?.removeAttribute('disabled');
+    }
+  });
+
+  refreshEngines();
+</script>
+
+<style>
+  .home-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(380px, 1fr);
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .hero-copy {
+    display: flex;
+    min-height: 520px;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .quick-lab {
+    display: grid;
+    gap: 16px;
+  }
+
+  .quick-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .quick-form {
+    display: grid;
+    gap: 10px;
+  }
+
+  .quick-form .button {
+    justify-self: end;
+  }
+
+  .runtime-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .runtime-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+  }
+
+  .runtime-item svg {
+    color: var(--muted-2);
+  }
+
+  .runtime-item strong,
+  .runtime-item span {
+    display: block;
+  }
+
+  .runtime-item strong {
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+
+  .runtime-item span {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .runtime-item[data-status="ready"] svg,
+  .runtime-item[data-status="ready"] span {
+    color: var(--green);
+  }
+
+  .runtime-item[data-status="unconfigured"] svg,
+  .runtime-item[data-status="unconfigured"] span,
+  .runtime-item[data-status="unavailable"] svg,
+  .runtime-item[data-status="unavailable"] span,
+  .runtime-item[data-status="fallback"] svg,
+  .runtime-item[data-status="fallback"] span {
+    color: var(--amber);
+  }
+
+  .runtime-item[data-status="offline"] svg,
+  .runtime-item[data-status="offline"] span,
+  .runtime-item[data-status="missing"] svg,
+  .runtime-item[data-status="missing"] span {
+    color: var(--red);
+  }
+
+  @media (max-width: 900px) {
+    .home-grid,
+    .runtime-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-copy {
+      min-height: auto;
+      padding: 28px 0 8px;
     }
   }
 </style>

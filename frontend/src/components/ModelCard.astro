@@ -1,5 +1,6 @@
 ---
-// ModelCard component
+import { ArrowUpRight, Flower2, Grid3X3, Workflow } from 'lucide-astro';
+
 export interface Props {
   id: string;
   name: string;
@@ -9,111 +10,77 @@ export interface Props {
 }
 
 const { id, name, description, type, tags } = Astro.props;
-
-const typeColors: Record<string, string> = {
-  classification: 'badge-blue',
-  regression:     'badge-violet',
-  generation:     'badge-green',
-};
+const Icon = id.includes('digits') ? Grid3X3 : id.includes('iris') ? Flower2 : Workflow;
 ---
 
-<a href={`/playground?model=${id}`} class="model-card card" id={`model-card-${id}`}>
-  <div class="model-card-header">
-    <div class="model-icon">
-      {type === 'classification' ? '🔮' : type === 'regression' ? '📈' : '✨'}
+<a href={`/playground?model=${id}`} class="model-card panel panel-pad">
+  <div class="model-card-top">
+    <span class="icon-tile"><Icon size={18} /></span>
+    <span class="chip blue">{type}</span>
+  </div>
+
+  <div class="model-card-body">
+    <h3>{name}</h3>
+    <p>{description}</p>
+  </div>
+
+  <div class="model-card-foot">
+    <div class="model-tags">
+      {tags.slice(0, 3).map((tag) => <span class="chip">{tag}</span>)}
     </div>
-    <span class={`badge ${typeColors[type] ?? 'badge-blue'}`}>
-      {type}
-    </span>
-  </div>
-
-  <h3 class="model-name">{name}</h3>
-  <p class="model-description">{description}</p>
-
-  <div class="model-tags">
-    {tags.map(t => (
-      <span class="tag">{t}</span>
-    ))}
-  </div>
-
-  <div class="model-cta">
-    <span>Try it now</span>
-    <span class="arrow">→</span>
+    <ArrowUpRight size={17} />
   </div>
 </a>
 
 <style>
   .model-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    text-decoration: none;
+    display: grid;
+    min-height: 220px;
     color: inherit;
-    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
 
-  .model-card:hover .arrow {
-    transform: translateX(5px);
+  .model-card:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
   }
 
-  .model-card-header {
+  .model-card-top,
+  .model-card-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
   }
 
-  .model-icon {
-    font-size: 2rem;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
+  .model-card-body {
+    align-self: center;
   }
 
-  .model-name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--clr-text);
+  .model-card h3 {
+    margin: 0;
+    max-width: 14rem;
+    color: var(--text);
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.2;
   }
 
-  .model-description {
-    font-size: 0.85rem;
-    color: var(--clr-muted);
+  .model-card p {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 0.86rem;
     line-height: 1.55;
-    flex: 1;
   }
 
   .model-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 6px;
   }
 
-  .tag {
-    font-size: 0.72rem;
-    padding: 0.15rem 0.55rem;
-    background: rgba(255,255,255,0.05);
-    border-radius: 99px;
-    color: var(--clr-muted);
-    border: 1px solid var(--clr-border);
-    font-family: var(--font-mono);
-  }
-
-  .model-cta {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--clr-primary);
-    margin-top: 0.25rem;
-  }
-
-  .arrow {
-    display: inline-block;
-    transition: transform 0.2s;
+  .model-card-foot svg {
+    flex: 0 0 auto;
+    color: var(--muted-2);
   }
 </style>
