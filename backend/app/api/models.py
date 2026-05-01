@@ -49,8 +49,10 @@ def get_model(model_id: str):
 def predict(model_id: str, req: PredictRequest):
     try:
         result = registry.predict(model_id, req.features)
-    except ValueError as e:
+    except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference error: {str(e)}")
 

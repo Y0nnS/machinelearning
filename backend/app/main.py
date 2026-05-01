@@ -6,12 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.api.lab import router as lab_router
 from app.api.models import router as models_router
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="REST API for ML model inference and management",
+    description="REST API for local ML models, Go experiments, and optional external AI calls",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -27,12 +28,13 @@ app.add_middleware(
 
 # ── Routers ────────────────────────────────────────────────────────────────────
 app.include_router(models_router)
+app.include_router(lab_router)
 
 
 # ── Health check ───────────────────────────────────────────────────────────────
 @app.get("/health", tags=["system"])
 def health():
-    return {"status": "ok", "version": settings.APP_VERSION}
+    return {"status": "ok", "version": settings.APP_VERSION, "name": settings.APP_NAME}
 
 
 @app.get("/", tags=["system"])

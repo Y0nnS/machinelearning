@@ -15,7 +15,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 
-MODELS_DIR = Path("models")
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+MODELS_DIR = BACKEND_DIR / "models"
 MODELS_DIR.mkdir(exist_ok=True)
 
 
@@ -117,10 +118,16 @@ class ModelRegistry:
     def predict(self, model_id: str, features: List[float]) -> Dict[str, Any]:
         obj = self._load(model_id)
         if obj is None:
-            raise ValueError(f"Model '{model_id}' not found or not loaded.")
+            raise LookupError(f"Model '{model_id}' not found or not loaded.")
 
         pipeline = obj["pipeline"]
         classes  = obj["classes"]
+        expected_features = getattr(pipeline, "n_features_in_", None)
+        if expected_features is not None and len(features) != expected_features:
+            raise ValueError(
+                f"Expected {expected_features} features, received {len(features)}."
+            )
+
         X = np.array(features).reshape(1, -1)
 
         pred_idx  = int(pipeline.predict(X)[0])
